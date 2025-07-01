@@ -1,7 +1,9 @@
 services:
   - type: web
-    name: voter-holding-app
+    name: avoter-app
     env: python
     buildCommand: ""
     startCommand: gunicorn app:app
-    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false
