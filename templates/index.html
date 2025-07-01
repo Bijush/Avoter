@@ -1,1 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><title>Records</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
+<style>
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 10px;
+  }
+  .flex-grow {
+    flex: 1;
+  }
+  thead th {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 2;
+  }
+
+  td.details-control {
+    background: url('https://www.datatables.net/examples/resources/details_open.png') no-repeat center center;
+    cursor: pointer;
+    background-size: 24px 24px;
+    width: 40px;
+    height: 40px;
+    padding: 10px;
+  }
+  tr.shown td.details-control {
+    background: url('https://www.datatables.net/examples/resources/details_close.png') no-repeat center center;
+    background-size: 24px 24px;
+  }
+
+  /* 🌈 Stylish animated gradient header */
+  .page-header {
+    background: linear-gradient(270deg, #4e54c8, #8f94fb, #4e54c8);
+    background-size: 600% 600%;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: gradientMove 15s ease infinite;
+  }
+  @keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+</style>
+
+</head>
+<body class="bg-light">
+
+<header class="page-header text-center py-5 mb-4">
+  <h1 class="display-4 fw-bold mb-2">
+    🗳️ Voter Holding Record Keeping
+  </h1>
+  <p class="lead mb-0">
+    Manage and track voter records easily and efficiently
+  </p>
+</header>
+
+
+<div class="container py-4 flex-grow">
+  <div class="d-flex justify-content-between mb-3">
+    <h2>Records</h2>
+    <a href="{{ url_for('add') }}" class="btn btn-success">
+      <i class="bi bi-plus-circle me-1"></i>Add New
+    </a>
+  </div>
+  <div class="card shadow-sm mb-3 p-3">
+    <div class="row g-2">
+      <div class="col-auto"><select id="paidFilter" class="form-select">
+        <option value="">All Paid</option><option value="paid">Paid</option><option value="unpaid">Unpaid</option>
+      </select></div>
+      <div class="col-auto"><select id="completeFilter" class="form-select">
+        <option value="">All Complete</option><option value="complete">Complete</option><option value="pending">Pending</option>
+      </select></div>
+    </div>
+  </div>
+  <div class="card shadow-sm">
+    <div class="table-responsive-sm">
+      <table id="recordsTable" class="table table-striped table-hover table-bordered table-sm align-middle mb-0 text-nowrap">
+
+        <thead class="table-light">
+  <tr>
+    <th style="width:50px;"></th>
+    <th>Sl</th>
+    <th>Name</th>
+    <th class="d-none d-sm-table-cell">Epic</th>
+    <th class="d-none d-sm-table-cell">PS</th>
+    <th>Old House</th>
+    <th>New House</th>
+    <th>Payment (₹)</th>
+    <th>Paid?</th>
+    <th>Complete?</th>
+    <th>Remark</th>
+    <th>Actions</th>
+  </tr>
+</thead>
+
+<tbody>
+  {% for r in records %}
+  <tr data-wife='{{ [r.wife_name, r.wife_payment, r.wife_paid, r.wife_complete] | tojson | safe }}'>
+    <td class="details-control text-center">
+      <i class="bi bi-plus-circle fs-4"></i>
+    </td>
+    <td>{{ r.id }}</td>
+    <td>{{ r.name }}</td>
+    <td class="d-none d-sm-table-cell">{{ r.epic }}</td>
+    <td class="d-none d-sm-table-cell">{{ r.ps }}</td>
+    <td>{{ r.old_house }}</td>
+    <td>{{ r.new_house }}</td>
+    <td>₹{{ "%.2f"|format(r.payment) }}</td>
+    <td>
+      <span class="badge bg-{{ 'success' if r.paid=='paid' else 'warning' }}">
+        {{ r.paid.title() }}
+      </span>
+    </td>
+    <td>
+      <span class="badge bg-{{ 'success' if r.complete=='complete' else 'secondary' }}">
+        {{ r.complete.title() }}
+      </span>
+    </td>
+    <td>
+      <input
+        type="text"
+        name="remark"
+        class="form-control form-control-sm remark-input"
+        value="{{ r.remark or '' }}"
+        placeholder="Add remark..."
+        data-id="{{ r.id }}"
+      >
+    </td>
+    <td class="text-nowrap">
+      <a href="{{ url_for('edit', id=r.id) }}" class="btn btn-sm btn-primary me-1">
+        <i class="bi bi-pencil-square"></i>
+      </a>
+      <form method="post" action="{{ url_for('delete', id=r.id) }}" style="display:inline" onsubmit="return confirm('Delete?')">
+        <button class="btn btn-sm btn-danger">
+          <i class="bi bi-trash"></i>
+        </button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
+
+
+        <tfoot>
+          <tr>
+            <th colspan="7" class="text-end">Total:</th>
+            <th class="fw-bold" id="totalAmt"></th>
+            <th colspan="3" class="text-start" id="footerStats"></th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+  <div id="remarkToast" class="toast align-items-center text-white bg-success border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body">
+        ✅ Remark saved!
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+ 
+<footer class="bg-dark text-white py-3">
+  <div class="container text-center">&copy; {{ now.year }} Bijush Kumar Roy</div>
+</footer>
+ 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+  $(function(){
+    const intVal = i => parseFloat((i + '').replace(/[₹,]/g, '')) || 0;
+
+    const table = $('#recordsTable').DataTable({
+      destroy: true,
+      paging: true,
+      info: true,
+      lengthChange: false,
+      scrollX: true,
+      responsive: false,
+      order: [[1, 'asc']],
+      columnDefs: [
+        { orderable: false, searchable: false, targets: 0 }
+      ],
+      footerCallback() {
+        const api = this.api();
+        let total = 0, paidSum = 0, unpaidSum = 0, compCount = 0, pendCount = 0;
+
+        api.rows({ search: 'applied' }).every(function(){
+          const data = this.data();
+          const amt = intVal(data[7]);
+          const tempP = $('<div>').html(data[8]).text().trim().toLowerCase();
+          const tempC = $('<div>').html(data[9]).text().trim().toLowerCase();
+
+          total += amt;
+          if (tempP === 'paid') paidSum += amt; else unpaidSum += amt;
+          if (tempC === 'complete') compCount++; else pendCount++;
+        });
+
+        $('#totalAmt').text('₹' + total.toFixed(2));
+        $('#footerStats').text(`Paid ₹${paidSum.toFixed(2)}, Unpaid ₹${unpaidSum.toFixed(2)}, Complete ${compCount}, Pending ${pendCount}`);
+      }
+    });
+
+    // Filters
+    $('#paidFilter').on('change', () => table.column(8).search($('#paidFilter').val()).draw());
+    $('#completeFilter').on('change', () => table.column(9).search($('#completeFilter').val()).draw());
+
+    // Expand row
+    $('#recordsTable tbody').on('click', 'td.details-control', function(){
+      const tr = $(this).closest('tr');
+      const row = table.row(tr);
+      const icon = $(this).find('i');
+
+      if (row.child.isShown()) {
+        row.child.hide();
+        tr.removeClass('shown');
+        icon.removeClass('bi-dash-circle').addClass('bi-plus-circle');
+      } else {
+        const dataAttr = tr.attr('data-wife');
+        let wifeData = [];
+        try {
+          wifeData = JSON.parse(dataAttr);
+        } catch (e) {
+          wifeData = ['-', 0, '-', '-'];
+        }
+
+        const html = `
+          <table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">
+            <tr><td>Wife Name:</td><td>${wifeData[0] || '-'}</td></tr>
+            <tr><td>Wife Payment:</td><td>₹${parseFloat(wifeData[1] || 0).toFixed(2)}</td></tr>
+            <tr><td>Wife Paid:</td><td>${wifeData[2] || '-'}</td></tr>
+            <tr><td>Wife Complete:</td><td>${wifeData[3] || '-'}</td></tr>
+          </table>
+        `;
+
+        row.child(html).show();
+        tr.addClass('shown');
+        icon.removeClass('bi-plus-circle').addClass('bi-dash-circle');
+      }
+    });
+
+    // Save remark input
+    $(document).on('change', '.remark-input', function() {
+  const id = $(this).data('id');
+  const remark = $(this).val();
+
+  $.post('/update_remark', { id: id, remark: remark })
+    .done(() => {
+      console.log('Remark saved');
+
+      const toastEl = document.getElementById('remarkToast');
+      const toast = new bootstrap.Toast(toastEl);
+      toast.show();
+    })
+    .fail(() => alert('Failed to save remark'));
+});
+
+
+  });
+</script>
+
+
+
+</body>
+</html>
