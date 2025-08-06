@@ -1,102 +1,134 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, UTC
+from flask import Flask, render_template, request, redirect, url_for
+from datetime import datetime, timezone
 import os
-from dotenv import load_dotenv  # ✅ ADD THIS!
+import json
+from dotenv import load_dotenv
+import firebase_admin
+from firebase_admin import credentials, db as firebase_db
+import uuid
 
-load_dotenv()  # ✅ LOAD .env!
+load_dotenv()
 
 app = Flask(__name__)
 
-# ✅ Now this will not be None!
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+# --- Initialize Firebase Admin ---
+SERVICE_ACCOUNT_PATH = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+SERVICE_ACCOUNT_JSON = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
 
+if SERVICE_ACCOUNT_PATH and os.path.exists(SERVICE_ACCOUNT_PATH):
+    cred = credentials.Certificate(SERVICE_ACCOUNT_PATH)
+elif SERVICE_ACCOUNT_JSON:
+    cred = credentials.Certificate(json.loads(SERVICE_ACCOUNT_JSON))
+else:
+    raise RuntimeError("Service account JSON not provided")
+
+firebase_admin.initialize_app(cred, {
+    "databaseURL": os.environ.get("FIREBASE_DATABASE_URL")
+})
+DB_REF = firebase_db.reference("records")
+
+# --- Helper ---
+def default_record(data=None):
+    d = data or {}
+    defaults = {
+        "name": "",
+        "epic": "",
+        "ps": "",
+        "old_house": "",
+        "new_house": "",
+        "payment": 0.0,
+        "paid": "",
+        "complete": "",
+        "wife_name": "",
+        "wife_payment": 0.0,
+        "wife_paid": "",
+        "wife_complete": "",
+        "remark": ""
+    }
+    defaults.update(d)
+    return defaults
+
+# --- Context processor ---
 @app.context_processor
 def inject_now():
-    return {'now': datetime.now(UTC)}
+    return {"now": datetime.now(timezone.utc)}
 
-class Record(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    epic = db.Column(db.String(50))
-    ps = db.Column(db.String(50))
-    old_house = db.Column(db.String(100))
-    new_house = db.Column(db.String(100))
-    payment = db.Column(db.Float, default=0.0)
-    paid = db.Column(db.String(10))
-    complete = db.Column(db.String(10))
-    wife_name = db.Column(db.String(100), default='')
-    wife_payment = db.Column(db.Float, default=0.0)
-    wife_paid = db.Column(db.String(10), default='')
-    wife_complete = db.Column(db.String(10), default='')
-    remark = db.Column(db.String(255))
-
-with app.app_context():
-    db.create_all()
-
-@app.route('/')
+# --- Routes ---
+@app.route("/")
 def index():
-    return render_template('index.html', records=Record.query.all())
+    records_snapshot = DB_REF.get() or {}
+    # Convert dict {id: data} → list with id
+    records = []
+    for rid, data in records_snapshot.items():
+        rec = default_record(data)
+        rec["id"] = rid
+        records.append(rec)
+    records.sort(key=lambda r: r.get("name", "").lower())
+    return render_template("index.html", records=records)
 
-@app.route('/add', methods=['GET', 'POST'])
+@app.route("/add", methods=["GET", "POST"])
 def add():
-    if request.method == 'POST':
-        rec = Record(
-            name=request.form['name'],
-            epic=request.form['epic'],
-            ps=request.form['ps'],
-            old_house=request.form['old_house'],
-            new_house=request.form['new_house'],
-            payment=float(request.form.get('payment') or 0),
-            paid=request.form['paid'],
-            complete=request.form['complete'],
-            wife_name=request.form.get('wife_name', ''),
-            wife_payment=float(request.form.get('wife_payment') or 0),
-            wife_paid=request.form.get('wife_paid', ''),
-            wife_complete=request.form.get('wife_complete', '')
-        )
-        db.session.add(rec)
-        db.session.commit()
-        return redirect(url_for('index'))
-    return render_template('form.html', action='Add', rec=None)
+    if request.method == "POST":
+        rec_id = str(uuid.uuid4())
+        data = default_record({
+            "name": request.form.get("name", "").strip(),
+            "epic": request.form.get("epic", "").strip(),
+            "ps": request.form.get("ps", "").strip(),
+            "old_house": request.form.get("old_house", "").strip(),
+            "new_house": request.form.get("new_house", "").strip(),
+            "payment": float(request.form.get("payment") or 0),
+            "paid": request.form.get("paid", ""),
+            "complete": request.form.get("complete", ""),
+            "wife_name": request.form.get("wife_name", ""),
+            "wife_payment": float(request.form.get("wife_payment") or 0),
+            "wife_paid": request.form.get("wife_paid", ""),
+            "wife_complete": request.form.get("wife_complete", ""),
+            "remark": request.form.get("remark", "")
+        })
+        DB_REF.child(rec_id).set(data)
+        return redirect(url_for("index"))
+    return render_template("form.html", action="Add", rec=None)
 
-@app.route('/edit/<int:id>', methods=['GET', 'POST'])
+@app.route("/edit/<string:id>", methods=["GET", "POST"])
 def edit(id):
-    rec = Record.query.get_or_404(id)
-    if request.method == 'POST':
-        rec.name = request.form['name']
-        rec.epic = request.form['epic']
-        rec.ps = request.form['ps']
-        rec.old_house = request.form['old_house']
-        rec.new_house = request.form['new_house']
-        rec.payment = float(request.form.get('payment') or 0)
-        rec.paid = request.form['paid']
-        rec.complete = request.form['complete']
-        rec.wife_name = request.form.get('wife_name', '')
-        rec.wife_payment = float(request.form.get('wife_payment') or 0)
-        rec.wife_paid = request.form.get('wife_paid', '')
-        rec.wife_complete = request.form.get('wife_complete', '')
-        db.session.commit()
-        return redirect(url_for('index'))
-    return render_template('form.html', action='Edit', rec=rec)
+    rec_snapshot = DB_REF.child(id).get()
+    if not rec_snapshot:
+        return "Record not found", 404
 
-@app.route('/delete/<int:id>', methods=['POST'])
+    if request.method == "POST":
+        updated = default_record({
+            "name": request.form.get("name", "").strip(),
+            "epic": request.form.get("epic", "").strip(),
+            "ps": request.form.get("ps", "").strip(),
+            "old_house": request.form.get("old_house", "").strip(),
+            "new_house": request.form.get("new_house", "").strip(),
+            "payment": float(request.form.get("payment") or 0),
+            "paid": request.form.get("paid", ""),
+            "complete": request.form.get("complete", ""),
+            "wife_name": request.form.get("wife_name", ""),
+            "wife_payment": float(request.form.get("wife_payment") or 0),
+            "wife_paid": request.form.get("wife_paid", ""),
+            "wife_complete": request.form.get("wife_complete", ""),
+            "remark": request.form.get("remark", rec_snapshot.get("remark", ""))
+        })
+        DB_REF.child(id).update(updated)
+        return redirect(url_for("index"))
+
+    rec = default_record(rec_snapshot)
+    rec["id"] = id
+    return render_template("form.html", action="Edit", rec=rec)
+
+@app.route("/delete/<string:id>", methods=["POST"])
 def delete(id):
-    rec = Record.query.get_or_404(id)
-    db.session.delete(rec)
-    db.session.commit()
-    return redirect(url_for('index'))
+    DB_REF.child(id).delete()
+    return redirect(url_for("index"))
 
-@app.route('/update_remark', methods=['POST'])
+@app.route("/update_remark", methods=["POST"])
 def update_remark():
-    id = request.form['id']
-    remark = request.form['remark']
-    record = Record.query.get(id)
-    record.remark = remark
-    db.session.commit()
-    return '', 204
+    id = request.form["id"]
+    remark = request.form["remark"]
+    DB_REF.child(id).update({"remark": remark})
+    return ("", 204)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
