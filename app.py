@@ -1,38 +1,30 @@
-from flask import Flask, render_template, request, redirect, url_for
-from datetime import datetime, timezone
 import os
 import json
+import base64
+import uuid
+from datetime import datetime, timezone
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import firebase_admin
 from firebase_admin import credentials, db
-import uuid
 
-# --- Flask app setup ---
 app = Flask(__name__)
 
-# --- Firebase configuration from environment variables ---
-firebase_url = os.getenv("FIREBASE_DATABASE_URL")
+# --- Load Firebase config from environment ---
+firebase_base64 = os.environ.get("FIREBASE_SERVICE_ACCOUNT_BASE64")
+firebase_db_url = os.environ.get("FIREBASE_DATABASE_URL")
 
-# Render does not support JSON files directly, so we rebuild the credentials dict manually
-firebase_creds = {
-    "type": "service_account",
-    "project_id": os.getenv("FIREBASE_PROJECT_ID"),
-    "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
-    "private_key": os.getenv("FIREBASE_PRIVATE_KEY").replace("\\n", "\n"),
-    "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
-    "client_id": os.getenv("FIREBASE_CLIENT_ID"),
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": f"https://www.googleapis.com/robot/v1/metadata/x509/{os.getenv('FIREBASE_CLIENT_EMAIL')}"
-}
+if not firebase_base64:
+    raise ValueError("Missing FIREBASE_SERVICE_ACCOUNT_BASE64 environment variable")
+if not firebase_db_url:
+    raise ValueError("Missing FIREBASE_DATABASE_URL environment variable")
 
-if not firebase_url:
-    raise RuntimeError("FIREBASE_DATABASE_URL missing from environment variables.")
+# Decode the Base64 Firebase credentials
+firebase_json = json.loads(base64.b64decode(firebase_base64).decode("utf-8"))
 
 # --- Initialize Firebase ---
 if not firebase_admin._apps:
-    cred = credentials.Certificate(firebase_creds)
-    firebase_admin.initialize_app(cred, {"databaseURL": firebase_url})
+    cred = credentials.Certificate(firebase_json)
+    firebase_admin.initialize_app(cred, {"databaseURL": firebase_db_url})
 
 DB_REF = db.reference("records")
 
@@ -138,5 +130,12 @@ def update_remark():
     DB_REF.child(id).update({"remark": remark})
     return ("", 204)
 
+@app.route("/test_connection")
+def test_connection():
+    ref = db.reference("test_connection")
+    ref.set({"status": "connected"})
+    return jsonify({"message": "✅ Firebase connected successfully!"})
+
+# --- Main entry ---
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
