@@ -114,7 +114,7 @@ tbody td{
 
 <tbody>
   {% for r in records %}
-  <tr data-wife='{{ [r.wife_name, r.wife_payment, r.wife_paid, r.wife_complete] | tojson | safe }}'>
+  <tr data-wife='{{ [r.wife_name, r.wife_epic, r.wife_payment, r.wife_paid, r.wife_complete] | tojson | safe }}'>
     <td class="details-control text-center">
       <i class="bi bi-plus-circle fs-4"></i>
     </td>
@@ -254,13 +254,14 @@ tbody td{
         }
 
         const html = `
-          <table cellpadding="5" cellspacing="0" border="1px" style="padding-left:50px;">
-            <tr><td>Wife Name:</td><td>${wifeData[0] || '-'}</td></tr>
-            <tr><td>Wife Payment:</td><td>₹${parseFloat(wifeData[1] || 0).toFixed(2)}</td></tr>
-            <tr><td>Wife Paid:</td><td>${wifeData[2] || '-'}</td></tr>
-            <tr><td>Wife Complete:</td><td>${wifeData[3] || '-'}</td></tr>
-          </table>
-        `;
+  <table cellpadding="5" cellspacing="0" border="1px" style="padding-left:50px;">
+    <tr><td>Wife Name:</td><td>${wifeData[0] || '-'}</td></tr>
+    <tr><td>Wife EPIC:</td><td>${wifeData[1] || '-'}</td></tr>
+    <tr><td>Wife Payment:</td><td>₹${parseFloat(wifeData[2] || 0).toFixed(2)}</td></tr>
+    <tr><td>Wife Paid:</td><td>${wifeData[3] || '-'}</td></tr>
+    <tr><td>Wife Complete:</td><td>${wifeData[4] || '-'}</td></tr>
+  </table>
+`;
 
         row.child(html).show();
         tr.addClass('shown');
