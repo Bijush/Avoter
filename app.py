@@ -44,7 +44,8 @@ def default_record(data=None):
         "wife_payment": 0.0,
         "wife_paid": "",
         "wife_complete": "",
-        "remark": ""
+        "remark": "",
+        "wife_epic":""
     }
     defaults.update(d)
     return defaults
@@ -94,6 +95,7 @@ def add():
             "wife_payment": float(request.form.get("wife_payment") or 0),
             "wife_paid": request.form.get("wife_paid", ""),
             "wife_complete": request.form.get("wife_complete", ""),
+            "wife_epic": request.form.get("wife_epic", ""),
             "remark": request.form.get("remark", "")
         })
         DB_REF.child(rec_id).set(data)
@@ -120,6 +122,7 @@ def edit(id):
             "wife_payment": float(request.form.get("wife_payment") or 0),
             "wife_paid": request.form.get("wife_paid", ""),
             "wife_complete": request.form.get("wife_complete", ""),
+            "wife_epic": request.form.get("wife_epic", ""),
             "remark": request.form.get("remark", rec_snapshot.get("remark", ""))
         })
         DB_REF.child(id).update(updated)
