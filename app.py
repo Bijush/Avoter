@@ -4,28 +4,31 @@ import os
 import json
 from dotenv import load_dotenv
 import firebase_admin
-from firebase_admin import credentials, db as firebase_db
+from firebase_admin import credentials, db
 import uuid
 
+# --- Load environment variables ---
 load_dotenv()
 
 app = Flask(__name__)
 
 # --- Initialize Firebase Admin ---
-SERVICE_ACCOUNT_PATH = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-SERVICE_ACCOUNT_JSON = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
+firebase_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
+firebase_url = os.environ.get("FIREBASE_DATABASE_URL")
 
-if SERVICE_ACCOUNT_PATH and os.path.exists(SERVICE_ACCOUNT_PATH):
-    cred = credentials.Certificate(SERVICE_ACCOUNT_PATH)
-elif SERVICE_ACCOUNT_JSON:
-    cred = credentials.Certificate(json.loads(SERVICE_ACCOUNT_JSON))
-else:
-    raise RuntimeError("Service account JSON not provided")
+if not firebase_json:
+    raise RuntimeError("FIREBASE_SERVICE_ACCOUNT_JSON not found in environment variables")
+
+if not firebase_url:
+    raise RuntimeError("FIREBASE_DATABASE_URL not found in environment variables")
+
+cred = credentials.Certificate(json.loads(firebase_json))
 
 firebase_admin.initialize_app(cred, {
-    "databaseURL": os.environ.get("FIREBASE_DATABASE_URL")
+    "databaseURL": firebase_url
 })
-DB_REF = firebase_db.reference("records")
+
+DB_REF = db.reference("records")
 
 # --- Helper ---
 def default_record(data=None):
@@ -131,4 +134,4 @@ def update_remark():
     return ("", 204)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
