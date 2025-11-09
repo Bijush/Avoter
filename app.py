@@ -18,7 +18,7 @@ if not firebase_base64:
 if not firebase_db_url:
     raise ValueError("Missing FIREBASE_DATABASE_URL environment variable")
 
-# Decode the Base64 Firebase credentials
+# Decode Base64 Firebase credentials
 firebase_json = json.loads(base64.b64decode(firebase_base64).decode("utf-8"))
 
 # --- Initialize Firebase ---
@@ -49,7 +49,7 @@ def default_record(data=None):
     defaults.update(d)
     return defaults
 
-# --- Inject current time ---
+# --- Inject current time into templates ---
 @app.context_processor
 def inject_now():
     return {"now": datetime.now(timezone.utc)}
@@ -57,7 +57,18 @@ def inject_now():
 # --- Routes ---
 @app.route("/")
 def index():
-    records_snapshot = DB_REF.get() or {}
+    # Try to safely read from Firebase
+    try:
+        records_snapshot = DB_REF.get()
+    except Exception as e:
+        print("⚠️ Firebase read failed:", e)
+        records_snapshot = None
+
+    # Create the /records node if missing
+    if records_snapshot is None:
+        DB_REF.set({})
+        records_snapshot = {}
+
     records = []
     for rid, data in records_snapshot.items():
         rec = default_record(data)
@@ -132,9 +143,13 @@ def update_remark():
 
 @app.route("/test_connection")
 def test_connection():
-    ref = db.reference("test_connection")
-    ref.set({"status": "connected"})
-    return jsonify({"message": "✅ Firebase connected successfully!"})
+    try:
+        ref = db.reference("test_connection")
+        ref.set({"status": "connected"})
+        data = ref.get()
+        return jsonify({"message": "✅ Firebase connected successfully!", "data": data})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # --- Main entry ---
 if __name__ == "__main__":
