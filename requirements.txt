@@ -1,7 +1,5 @@
-Flask
-Flask_SQLAlchemy
-psycopg2-binary
-gunicorn
+flask
+firebase-admin
 python-dotenv
-
+gunicorn
 
