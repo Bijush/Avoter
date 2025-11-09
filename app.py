@@ -2,35 +2,41 @@ from flask import Flask, render_template, request, redirect, url_for
 from datetime import datetime, timezone
 import os
 import json
-from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials, db
 import uuid
 
-# --- Load environment variables ---
-load_dotenv()
-
+# --- Flask app setup ---
 app = Flask(__name__)
 
-# --- Initialize Firebase Admin ---
-firebase_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
-firebase_url = os.environ.get("FIREBASE_DATABASE_URL")
+# --- Firebase configuration from environment variables ---
+firebase_url = os.getenv("FIREBASE_DATABASE_URL")
 
-if not firebase_json:
-    raise RuntimeError("FIREBASE_SERVICE_ACCOUNT_JSON not found in environment variables")
+# Render does not support JSON files directly, so we rebuild the credentials dict manually
+firebase_creds = {
+    "type": "service_account",
+    "project_id": os.getenv("FIREBASE_PROJECT_ID"),
+    "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
+    "private_key": os.getenv("FIREBASE_PRIVATE_KEY").replace("\\n", "\n"),
+    "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
+    "client_id": os.getenv("FIREBASE_CLIENT_ID"),
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": f"https://www.googleapis.com/robot/v1/metadata/x509/{os.getenv('FIREBASE_CLIENT_EMAIL')}"
+}
 
 if not firebase_url:
-    raise RuntimeError("FIREBASE_DATABASE_URL not found in environment variables")
+    raise RuntimeError("FIREBASE_DATABASE_URL missing from environment variables.")
 
-cred = credentials.Certificate(json.loads(firebase_json))
-
-firebase_admin.initialize_app(cred, {
-    "databaseURL": firebase_url
-})
+# --- Initialize Firebase ---
+if not firebase_admin._apps:
+    cred = credentials.Certificate(firebase_creds)
+    firebase_admin.initialize_app(cred, {"databaseURL": firebase_url})
 
 DB_REF = db.reference("records")
 
-# --- Helper ---
+# --- Helper function ---
 def default_record(data=None):
     d = data or {}
     defaults = {
@@ -51,7 +57,7 @@ def default_record(data=None):
     defaults.update(d)
     return defaults
 
-# --- Context processor ---
+# --- Inject current time ---
 @app.context_processor
 def inject_now():
     return {"now": datetime.now(timezone.utc)}
@@ -60,7 +66,6 @@ def inject_now():
 @app.route("/")
 def index():
     records_snapshot = DB_REF.get() or {}
-    # Convert dict {id: data} → list with id
     records = []
     for rid, data in records_snapshot.items():
         rec = default_record(data)
