@@ -85,7 +85,7 @@ def index():
 def add():
     if request.method == "POST":
         rec_id = str(uuid.uuid4())
-        current_time = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S %Z")
+        current_time = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S")
         data = default_record({
             "name": request.form.get("name", "").strip(),
             "epic": request.form.get("epic", "").strip(),
@@ -115,7 +115,7 @@ def edit(id):
         return "Record not found", 404
 
     if request.method == "POST":
-        updated_time = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S %Z")
+        updated_time = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S")
         updated = default_record({
             "name": request.form.get("name", "").strip(),
             "epic": request.form.get("epic", "").strip(),
