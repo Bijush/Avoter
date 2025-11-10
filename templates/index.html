@@ -190,6 +190,49 @@ tfoot th {
 .btn-danger:hover {
   background-color: #b02a37;
 }
+  /* ===== 🎨 TD Color Coding ===== */
+
+/* Paid column (green background) */
+td:has(.badge.bg-success) {
+  background-color: #e9f7ef !important;
+}
+
+/* Unpaid column (light yellow) */
+td:has(.badge.bg-warning) {
+  background-color: #fff9e6 !important;
+}
+
+/* Complete column (blueish green tone) */
+td:has(.badge.bg-success):nth-child(10) {
+  background-color: #e7f9f5 !important;
+}
+
+/* Pending column (light gray) */
+td:has(.badge.bg-secondary) {
+  background-color: #f3f3f3 !important;
+}
+
+/* Date columns – soft pastel tone */
+td:nth-child(11), td:nth-child(12) {
+  background-color: #f8faff !important;
+  color: #333;
+}
+
+/* Remark column */
+td:nth-child(13) {
+  background-color: #f9f9ff !important;
+}
+
+/* Hover row highlight */
+#recordsTable tbody tr:hover td {
+  background-color: #eef4ff !important;
+  transition: background-color 0.3s ease;
+}
+
+/* Table borders subtle */
+#recordsTable td, #recordsTable th {
+  border-color: #dee2e6 !important;
+}
 </style>
  
 </head>
