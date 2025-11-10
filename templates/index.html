@@ -107,7 +107,8 @@ tbody td{
     <th> Payment (₹)</th>
     <th> Paid? </th>
     <th> Complete? </th>
-    <th> Date </th>
+    <th> Created_Date </th>
+    <th>Updated_Date</th>
     <th> Remark </th>
     <th> Actions </th>
   </tr>
@@ -136,7 +137,8 @@ tbody td{
         {{ r.complete.title() }}
       </span>
     </td>
-    <td>{{ r.date }}</td>
+    <td>{{ r.created_date or '-' }}</td>
+      <td>{{ r.updated_date or '-' }}</td>
     <td>
       <input
         type="text"
