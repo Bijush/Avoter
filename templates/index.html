@@ -118,6 +118,78 @@ tbody td{
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
+  /* ===== 🎨 Table Color Styling ===== */
+
+/* Header color (light gradient) */
+thead.table-light th {
+  background: linear-gradient(90deg, #6a11cb, #2575fc);
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+  border-bottom: 2px solid #dee2e6;
+}
+
+/* Row hover effect */
+#recordsTable tbody tr:hover {
+  background-color: #f0f4ff !important;
+  transition: background-color 0.3s ease;
+}
+
+/* Alternate row color */
+#recordsTable tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+/* Paid / Unpaid / Complete badges */
+.badge.bg-success {
+  background-color: #28a745 !important;
+}
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #000 !important;
+}
+.badge.bg-secondary {
+  background-color: #6c757d !important;
+}
+
+/* Remark input highlight */
+.remark-input {
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.remark-input:focus {
+  border-color: #2575fc;
+  box-shadow: 0 0 4px rgba(37, 117, 252, 0.4);
+}
+
+/* Total footer styling */
+tfoot th {
+  background-color: #4e54c8;
+  color: white;
+  font-weight: 600;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: #2575fc;
+  border: none;
+}
+.btn-primary:hover {
+  background-color: #1b5fd4;
+}
+.btn-success {
+  background-color: #28a745;
+}
+.btn-success:hover {
+  background-color: #218838;
+}
+.btn-danger {
+  background-color: #dc3545;
+}
+.btn-danger:hover {
+  background-color: #b02a37;
+}
 </style>
  
 </head>
