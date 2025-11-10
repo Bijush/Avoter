@@ -45,7 +45,8 @@ def default_record(data=None):
         "wife_paid": "",
         "wife_complete": "",
         "remark": "",
-        "wife_epic":""
+        "wife_epic":"",
+        "date":""
     }
     defaults.update(d)
     return defaults
@@ -96,7 +97,8 @@ def add():
             "wife_paid": request.form.get("wife_paid", ""),
             "wife_complete": request.form.get("wife_complete", ""),
             "wife_epic": request.form.get("wife_epic", ""),
-            "remark": request.form.get("remark", "")
+            "remark": request.form.get("remark", ""),
+            "date":current_time
         })
         DB_REF.child(rec_id).set(data)
         return redirect(url_for("index"))
