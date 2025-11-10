@@ -65,10 +65,10 @@ tbody td{
 
 <header class="page-header text-center py-5 mb-4">
   <h1 class="display-4 fw-bold mb-2">
-    🗳️ Voter Holding Record Keeping
+    🗳️ Holding Record Keeping
   </h1>
   <p class="lead mb-0">
-    Manage and track voter records easily and efficiently
+    Manage and track records
   </p>
 </header>
 
@@ -107,6 +107,7 @@ tbody td{
     <th> Payment (₹)</th>
     <th> Paid? </th>
     <th> Complete? </th>
+    <th> Date </th>
     <th> Remark </th>
     <th> Actions </th>
   </tr>
@@ -135,6 +136,7 @@ tbody td{
         {{ r.complete.title() }}
       </span>
     </td>
+    <td>{{ r.date }}</td>
     <td>
       <input
         type="text"
