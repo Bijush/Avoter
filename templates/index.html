@@ -14,6 +14,66 @@
     min-height: 100vh;
     padding: 10px;
   }
+  /* ===== 🌐 Responsive Table Layout ===== */
+.table-responsive-sm {
+  overflow-x: auto;
+}
+
+/* Make table flexible */
+#recordsTable {
+  width: 100% !important;
+  min-width: 1000px;  /* keep structure on narrow screens */
+  table-layout: auto;
+  border-collapse: collapse;
+}
+
+/* --- Column Width Balance --- */
+th:nth-child(2), td:nth-child(2) { width: 60px; }    /* Sl No */
+th:nth-child(3), td:nth-child(3) { min-width: 200px; width: 25%; } /* Name of Applicant */
+th:nth-child(4), td:nth-child(4) { width: 100px; }   /* Epic No */
+th:nth-child(5), td:nth-child(5) { width: 80px; }    /* PS No */
+th:nth-child(6), td:nth-child(6) { width: 100px; }   /* Old H.No */
+th:nth-child(7), td:nth-child(7) { width: 100px; }   /* New H.No */
+th:nth-child(8), td:nth-child(8) { width: 100px; }   /* Payment */
+th:nth-child(9), td:nth-child(9),
+th:nth-child(10), td:nth-child(10) { width: 90px; }  /* Paid / Complete */
+th:nth-child(11), td:nth-child(11),
+th:nth-child(12), td:nth-child(12) { width: 140px; } /* Dates */
+th:nth-child(13), td:nth-child(13) {
+  min-width: 220px;
+  width: 25%;  /* Remark gets priority width */
+}
+
+/* --- Remark input --- */
+.remark-input {
+  width: 100%;
+  min-width: 200px;
+  box-sizing: border-box;
+  font-size: 0.9rem;
+  padding: 4px 6px;
+}
+
+/* --- Center numeric columns --- */
+td:nth-child(2),
+td:nth-child(5),
+td:nth-child(8),
+td:nth-child(9),
+td:nth-child(10),
+td:nth-child(11),
+td:nth-child(12) {
+  text-align: center !important;
+}
+
+/* --- Auto horizontal scroll for narrow devices --- */
+@media (max-width: 768px) {
+  #recordsTable {
+    min-width: 800px;
+  }
+
+  .remark-input {
+    min-width: 160px;
+  }
+}
   .flex-grow {
     flex: 1;
   }
