@@ -46,7 +46,8 @@ def default_record(data=None):
         "wife_complete": "",
         "remark": "",
         "wife_epic":"",
-        "date":""
+        "created_date":"",
+        "updated_date":""
     }
     defaults.update(d)
     return defaults
@@ -99,7 +100,8 @@ def add():
             "wife_complete": request.form.get("wife_complete", ""),
             "wife_epic": request.form.get("wife_epic", ""),
             "remark": request.form.get("remark", ""),
-            "date":current_time
+            "created_date":current_time,
+            "updated_date":current_time
         })
         DB_REF.child(rec_id).set(data)
         return redirect(url_for("index"))
@@ -112,6 +114,7 @@ def edit(id):
         return "Record not found", 404
 
     if request.method == "POST":
+        updated_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
         updated = default_record({
             "name": request.form.get("name", "").strip(),
             "epic": request.form.get("epic", "").strip(),
@@ -126,6 +129,8 @@ def edit(id):
             "wife_paid": request.form.get("wife_paid", ""),
             "wife_complete": request.form.get("wife_complete", ""),
             "wife_epic": request.form.get("wife_epic", ""),
+            "created_date": rec_snapshot.get("created_date", ""),  # keep original
+            "updated_date": updated_time,
             "remark": request.form.get("remark", rec_snapshot.get("remark", ""))
         })
         DB_REF.child(id).update(updated)
