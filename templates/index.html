@@ -347,11 +347,21 @@ td:nth-child(13) {
   >
 </td>
     <td class="text-nowrap">
-      <a href="{{ url_for('edit', id=r.id) }}" class="btn btn-sm btn-primary me-1">
-        <i class="bi bi-pencil-square"></i>
-      </a>
-      <form method="post" action="{{ url_for('delete_record', id=r.id) }}" style="display:inline" onsubmit="return confirm('Delete this record?')">
-    </td>
+  <!-- ✏️ Edit button -->
+  <a href="{{ url_for('edit', id=r.id) }}" class="btn btn-sm btn-primary me-1">
+    <i class="bi bi-pencil-square"></i>
+  </a>
+
+  <!-- 🗑️ Delete button -->
+  <form method="post"
+        action="{{ url_for('delete_record', id=r.id) }}"
+        style="display:inline"
+        onsubmit="return confirm('Delete this record?')">
+    <button type="submit" class="btn btn-sm btn-danger">
+      <i class="bi bi-trash"></i>
+    </button>
+  </form>
+</td>
   </tr>
   {% endfor %}
 </tbody>
