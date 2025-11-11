@@ -107,9 +107,8 @@
                   <a href="{{ url }}" target="_blank" class="text-decoration-none text-info">
                     <i class="bi bi-file-earmark-pdf-fill"></i> PDF {{ loop.index }}
                   </a>
-                  <form method="post"
-      action="{{ url_for('delete_pdf', record_id=rec.id, filename=url.split('/')[-1]) }}"
-      class="m-0 d-inline">
+                  <form method="post" action="{{ url_for('delete_pdf', record_id=rec.id) }}" class="m-0">
+  <input type="hidden" name="pdf_url" value="{{ url }}">
   <button type="submit" class="btn btn-sm btn-outline-danger">
     <i class="bi bi-trash"></i> Delete
   </button>
