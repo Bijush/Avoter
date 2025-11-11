@@ -196,14 +196,22 @@ def delete_pdf(record_id, filename):
     return redirect(url_for("edit", id=record_id))
 
 
-@app.route("/delete/<string:id>", methods=["POST"])
-def delete(id):
-    # Delete all PDFs
-    folder = f"pdfs/{id}"
-    for blob in BUCKET.list_blobs(prefix=folder):
-        blob.delete()
-    DB_REF.child(id).delete()
-    return redirect(url_for("index"))
+@app.route("/delete_pdf/<string:record_id>", methods=["POST"])
+def delete_pdf(record_id):
+    pdf_url = request.form.get("pdf_url")
+    filename = pdf_url.split("/")[-1] if pdf_url else ""
+
+    if filename:
+        blob = BUCKET.blob(f"pdfs/{record_id}/{filename}")
+        if blob.exists():
+            blob.delete()
+
+    rec = DB_REF.child(record_id).get()
+    if rec and "pdf_urls" in rec:
+        updated_pdfs = [url for url in rec["pdf_urls"] if url != pdf_url]
+        DB_REF.child(record_id).update({"pdf_urls": updated_pdfs})
+
+    return redirect(url_for("edit", id=record_id))
 
 
 @app.route("/update_remark", methods=["POST"])
