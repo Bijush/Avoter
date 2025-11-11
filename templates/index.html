@@ -513,23 +513,18 @@ td:nth-child(13) {
   });
 
 function downloadPDF(url, fileName) {
-  if (!fileName) fileName = url.split('/').pop().split('?')[0] || 'file.pdf';
-
-  fetch(url)
-    .then(res => {
-      if (!res.ok) throw new Error('File not found');
-      return res.blob();
-    })
-    .then(blob => {
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(link.href);
-    })
-    .catch(err => alert('❌ Download failed: ' + err.message));
+  try {
+    if (!fileName) fileName = url.split('/').pop().split('?')[0] || 'file.pdf';
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch (err) {
+    alert('❌ Download failed: ' + err.message);
+  }
 }
 </script>
 
