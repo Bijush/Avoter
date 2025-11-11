@@ -4,10 +4,12 @@ import base64
 import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
 import firebase_admin
 from firebase_admin import credentials, db, storage
 import logging
+import requests
+from io import BytesIO
 
 app = Flask(__name__)
 
@@ -185,10 +187,13 @@ def edit(id):
     rec["id"] = id
     return render_template("form.html", action="Edit", rec=rec)
 
+
 @app.route("/delete_record/<string:id>", methods=["POST"])
 def delete_record(id):
     DB_REF.child(id).delete()
     return redirect(url_for("index"))
+
+
 # ✅ unified delete route (one only!)
 @app.route("/delete_pdf/<string:record_id>", methods=["POST"])
 def delete_pdf_route(record_id):
@@ -209,6 +214,31 @@ def delete_pdf_route(record_id):
         app.logger.info(f"Updated record {record_id} PDF list")
 
     return redirect(url_for("edit", id=record_id))
+
+
+# ✅ NEW — secure direct download route
+@app.route("/download_pdf")
+def download_pdf():
+    """Download a PDF using its public URL, keeping original filename."""
+    url = request.args.get("url")
+    if not url:
+        return "Missing file URL", 400
+
+    try:
+        response = requests.get(url)
+        if response.status_code != 200:
+            return "File not found or inaccessible", 404
+
+        filename = url.split("/")[-1].split("?")[0]
+        return send_file(
+            BytesIO(response.content),
+            as_attachment=True,
+            download_name=filename,
+            mimetype="application/pdf"
+        )
+    except Exception as e:
+        app.logger.error(f"❌ Error downloading file: {e}")
+        return f"Error: {e}", 500
 
 
 @app.route("/update_remark", methods=["POST"])
