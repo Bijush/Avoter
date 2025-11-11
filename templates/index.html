@@ -317,9 +317,9 @@ td:nth-child(13) {
 <td>{{ r.updated_date or '-' }}</td>
 
 <td>
-  {% if rec.pdf_urls and rec.pdf_urls|length > 0 %}
+  {% if r.pdf_urls and r.pdf_urls|length > 0 %}
     <div class="d-flex flex-wrap gap-1">
-      {% for url in rec.pdf_urls %}
+      {% for url in r.pdf_urls %}
         {% set filename = url.split('/')[-1].split('?')[0] %}
         <a href="{{ url }}" target="_blank" class="btn btn-sm btn-info text-white">
           <i class="bi bi-file-earmark-pdf"></i>
@@ -328,7 +328,7 @@ td:nth-child(13) {
         <a href="{{ url }}" download="{{ filename }}" class="btn btn-sm btn-success text-white">
           <i class="bi bi-download"></i>
         </a>
-        <form method="post" action="{{ url_for('delete_pdf_route', record_id=rec.id) }}" class="d-inline">
+        <form method="post" action="{{ url_for('delete_pdf_route', record_id=r.id) }}" class="d-inline">
           <input type="hidden" name="pdf_url" value="{{ url }}">
           <button type="submit" class="btn btn-sm btn-danger">
             <i class="bi bi-trash"></i>
