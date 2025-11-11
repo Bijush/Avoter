@@ -185,7 +185,10 @@ def edit(id):
     rec["id"] = id
     return render_template("form.html", action="Edit", rec=rec)
 
-
+@app.route("/delete_record/<string:id>", methods=["POST"])
+def delete_record(id):
+    DB_REF.child(id).delete()
+    return redirect(url_for("index"))
 # ✅ unified delete route (one only!)
 @app.route("/delete_pdf/<string:record_id>", methods=["POST"])
 def delete_pdf_route(record_id):
