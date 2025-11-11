@@ -7,8 +7,12 @@ from zoneinfo import ZoneInfo
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import firebase_admin
 from firebase_admin import credentials, db, storage
+import logging
 
 app = Flask(__name__)
+
+# --- Logging ---
+logging.basicConfig(level=logging.INFO)
 
 # --- Load Firebase config from environment ---
 firebase_base64 = os.environ.get("FIREBASE_SERVICE_ACCOUNT_BASE64")
@@ -36,7 +40,7 @@ if not firebase_admin._apps:
 DB_REF = db.reference("records")
 BUCKET = storage.bucket()
 
-# --- Helper function ---
+# --- Helper ---
 def default_record(data=None):
     d = data or {}
     defaults = {
@@ -54,7 +58,7 @@ def default_record(data=None):
         "wife_complete": "",
         "wife_epic": "",
         "remark": "",
-        "pdf_urls": [],  # multiple PDFs
+        "pdf_urls": [],
         "created_date": "",
         "updated_date": ""
     }
@@ -73,7 +77,7 @@ def index():
     try:
         records_snapshot = DB_REF.get()
     except Exception as e:
-        print("⚠️ Firebase read failed:", e)
+        app.logger.warning(f"⚠️ Firebase read failed: {e}")
         records_snapshot = None
 
     if records_snapshot is None:
@@ -84,7 +88,7 @@ def index():
     for rid, data in records_snapshot.items():
         rec = default_record(data)
         rec["id"] = rid
-        if isinstance(rec.get("pdf_urls"), str):  # old records
+        if isinstance(rec.get("pdf_urls"), str):
             rec["pdf_urls"] = [rec["pdf_urls"]]
         records.append(rec)
     records.sort(key=lambda r: r.get("name", "").lower())
@@ -97,7 +101,6 @@ def add():
         rec_id = str(uuid.uuid4())
         current_time = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S")
 
-        # Handle multiple PDF uploads
         pdf_files = request.files.getlist("pdfs")
         pdf_urls = []
         for pdf_file in pdf_files:
@@ -128,7 +131,9 @@ def add():
         })
 
         DB_REF.child(rec_id).set(data)
+        app.logger.info(f"✅ Added record {rec_id}")
         return redirect(url_for("index"))
+
     return render_template("form.html", action="Add", rec=None)
 
 
@@ -144,7 +149,6 @@ def edit(id):
         if isinstance(existing_pdfs, str):
             existing_pdfs = [existing_pdfs]
 
-        # Add new PDFs
         pdf_files = request.files.getlist("pdfs")
         for pdf_file in pdf_files:
             if pdf_file and pdf_file.filename.endswith(".pdf"):
@@ -174,6 +178,7 @@ def edit(id):
         })
 
         DB_REF.child(id).update(updated)
+        app.logger.info(f"✏️ Updated record {id}")
         return redirect(url_for("index"))
 
     rec = default_record(rec_snapshot)
@@ -181,23 +186,10 @@ def edit(id):
     return render_template("form.html", action="Edit", rec=rec)
 
 
-@app.route("/delete_pdf/<string:record_id>/<path:filename>", methods=["POST"])
-def delete_pdf(record_id, filename):
-    """Delete a specific PDF from Firebase Storage and update record."""
-    folder = f"pdfs/{record_id}/{filename}"
-    blob = BUCKET.blob(folder)
-    if blob.exists():
-        blob.delete()
-
-    rec = DB_REF.child(record_id).get()
-    if rec and "pdf_urls" in rec:
-        updated_pdfs = [url for url in rec["pdf_urls"] if not url.endswith(filename)]
-        DB_REF.child(record_id).update({"pdf_urls": updated_pdfs})
-    return redirect(url_for("edit", id=record_id))
-
-
+# ✅ unified delete route (one only!)
 @app.route("/delete_pdf/<string:record_id>", methods=["POST"])
-def delete_pdf(record_id):
+def delete_pdf_route(record_id):
+    """Delete a specific PDF URL from record and Firebase Storage."""
     pdf_url = request.form.get("pdf_url")
     filename = pdf_url.split("/")[-1] if pdf_url else ""
 
@@ -205,11 +197,13 @@ def delete_pdf(record_id):
         blob = BUCKET.blob(f"pdfs/{record_id}/{filename}")
         if blob.exists():
             blob.delete()
+            app.logger.info(f"🗑 Deleted PDF: {filename}")
 
     rec = DB_REF.child(record_id).get()
     if rec and "pdf_urls" in rec:
         updated_pdfs = [url for url in rec["pdf_urls"] if url != pdf_url]
         DB_REF.child(record_id).update({"pdf_urls": updated_pdfs})
+        app.logger.info(f"Updated record {record_id} PDF list")
 
     return redirect(url_for("edit", id=record_id))
 
@@ -219,6 +213,7 @@ def update_remark():
     id = request.form["id"]
     remark = request.form["remark"]
     DB_REF.child(id).update({"remark": remark})
+    app.logger.info(f"Remark updated for {id}")
     return ("", 204)
 
 
