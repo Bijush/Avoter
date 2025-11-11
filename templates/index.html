@@ -350,11 +350,7 @@ td:nth-child(13) {
       <a href="{{ url_for('edit', id=r.id) }}" class="btn btn-sm btn-primary me-1">
         <i class="bi bi-pencil-square"></i>
       </a>
-      <form method="post" action="{{ url_for('delete_record', record_id=r.id) }}" style="display:inline" onsubmit="return confirm('Delete this record?')">
-  <button class="btn btn-sm btn-danger">
-    <i class="bi bi-trash"></i>
-  </button>
-</form>
+      <form method="post" action="{{ url_for('delete_record', id=r.id) }}" style="display:inline" onsubmit="return confirm('Delete this record?')">
     </td>
   </tr>
   {% endfor %}
