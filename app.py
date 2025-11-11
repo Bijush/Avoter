@@ -54,7 +54,7 @@ def default_record(data=None):
         "wife_complete": "",
         "wife_epic": "",
         "remark": "",
-        "pdf_url": "",  # 👈 NEW
+        "pdf_urls": [],  # multiple PDFs
         "created_date": "",
         "updated_date": ""
     }
@@ -84,6 +84,8 @@ def index():
     for rid, data in records_snapshot.items():
         rec = default_record(data)
         rec["id"] = rid
+        if isinstance(rec.get("pdf_urls"), str):  # old records
+            rec["pdf_urls"] = [rec["pdf_urls"]]
         records.append(rec)
     records.sort(key=lambda r: r.get("name", "").lower())
     return render_template("index.html", records=records)
@@ -95,14 +97,15 @@ def add():
         rec_id = str(uuid.uuid4())
         current_time = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S")
 
-        # Handle PDF upload
-        pdf_file = request.files.get("pdf")
-        pdf_url = ""
-        if pdf_file and pdf_file.filename.endswith(".pdf"):
-            blob = BUCKET.blob(f"pdfs/{rec_id}/{pdf_file.filename}")
-            blob.upload_from_file(pdf_file, content_type="application/pdf")
-            blob.make_public()
-            pdf_url = blob.public_url
+        # Handle multiple PDF uploads
+        pdf_files = request.files.getlist("pdfs")
+        pdf_urls = []
+        for pdf_file in pdf_files:
+            if pdf_file and pdf_file.filename.endswith(".pdf"):
+                blob = BUCKET.blob(f"pdfs/{rec_id}/{pdf_file.filename}")
+                blob.upload_from_file(pdf_file, content_type="application/pdf")
+                blob.make_public()
+                pdf_urls.append(blob.public_url)
 
         data = default_record({
             "name": request.form.get("name", "").strip(),
@@ -119,7 +122,7 @@ def add():
             "wife_complete": request.form.get("wife_complete", ""),
             "wife_epic": request.form.get("wife_epic", ""),
             "remark": request.form.get("remark", ""),
-            "pdf_url": pdf_url,
+            "pdf_urls": pdf_urls,
             "created_date": current_time,
             "updated_date": current_time
         })
@@ -137,14 +140,18 @@ def edit(id):
 
     if request.method == "POST":
         updated_time = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S")
+        existing_pdfs = rec_snapshot.get("pdf_urls", [])
+        if isinstance(existing_pdfs, str):
+            existing_pdfs = [existing_pdfs]
 
-        pdf_file = request.files.get("pdf")
-        pdf_url = rec_snapshot.get("pdf_url", "")
-        if pdf_file and pdf_file.filename.endswith(".pdf"):
-            blob = BUCKET.blob(f"pdfs/{id}/{pdf_file.filename}")
-            blob.upload_from_file(pdf_file, content_type="application/pdf")
-            blob.make_public()
-            pdf_url = blob.public_url
+        # Add new PDFs
+        pdf_files = request.files.getlist("pdfs")
+        for pdf_file in pdf_files:
+            if pdf_file and pdf_file.filename.endswith(".pdf"):
+                blob = BUCKET.blob(f"pdfs/{id}/{pdf_file.filename}")
+                blob.upload_from_file(pdf_file, content_type="application/pdf")
+                blob.make_public()
+                existing_pdfs.append(blob.public_url)
 
         updated = default_record({
             "name": request.form.get("name", "").strip(),
@@ -161,7 +168,7 @@ def edit(id):
             "wife_complete": request.form.get("wife_complete", ""),
             "wife_epic": request.form.get("wife_epic", ""),
             "remark": request.form.get("remark", rec_snapshot.get("remark", "")),
-            "pdf_url": pdf_url,
+            "pdf_urls": existing_pdfs,
             "created_date": rec_snapshot.get("created_date", ""),
             "updated_date": updated_time
         })
@@ -174,14 +181,27 @@ def edit(id):
     return render_template("form.html", action="Edit", rec=rec)
 
 
+@app.route("/delete_pdf/<string:record_id>/<path:filename>", methods=["POST"])
+def delete_pdf(record_id, filename):
+    """Delete a specific PDF from Firebase Storage and update record."""
+    folder = f"pdfs/{record_id}/{filename}"
+    blob = BUCKET.blob(folder)
+    if blob.exists():
+        blob.delete()
+
+    rec = DB_REF.child(record_id).get()
+    if rec and "pdf_urls" in rec:
+        updated_pdfs = [url for url in rec["pdf_urls"] if not url.endswith(filename)]
+        DB_REF.child(record_id).update({"pdf_urls": updated_pdfs})
+    return redirect(url_for("edit", id=record_id))
+
+
 @app.route("/delete/<string:id>", methods=["POST"])
 def delete(id):
-    # Delete PDF if exists
-    rec = DB_REF.child(id).get()
-    if rec and rec.get("pdf_url"):
-        folder = f"pdfs/{id}"
-        for blob in BUCKET.list_blobs(prefix=folder):
-            blob.delete()
+    # Delete all PDFs
+    folder = f"pdfs/{id}"
+    for blob in BUCKET.list_blobs(prefix=folder):
+        blob.delete()
     DB_REF.child(id).delete()
     return redirect(url_for("index"))
 
