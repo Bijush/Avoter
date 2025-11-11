@@ -107,12 +107,10 @@
                   <a href="{{ url }}" target="_blank" class="text-decoration-none text-info">
                     <i class="bi bi-file-earmark-pdf-fill"></i> PDF {{ loop.index }}
                   </a>
-                  <form method="post" action="{{ url_for('delete_pdf_route', record_id=rec.id) }}" class="m-0">
-  <input type="hidden" name="pdf_url" value="{{ url }}">
-  <button type="submit" class="btn btn-sm btn-outline-danger">
-    <i class="bi bi-trash"></i> Delete
-  </button>
-</form>
+                  <button type="button" class="btn btn-sm btn-outline-danger"
+        onclick="deletePDF('{{ rec.id }}', '{{ url }}')">
+  <i class="bi bi-trash"></i> Delete
+</button>
                 </li>
               {% endfor %}
             </ul>
@@ -131,6 +129,25 @@
     </form>
   </div>
 </div>
+<script>
+async function deletePDF(recordId, pdfUrl) {
+  if (!confirm("Delete this PDF?")) return;
 
+  const formData = new FormData();
+  formData.append("pdf_url", pdfUrl);
+
+  const res = await fetch(`/delete_pdf/${recordId}`, {
+    method: "POST",
+    body: formData
+  });
+
+  if (res.ok) {
+    alert("PDF deleted successfully!");
+    location.reload();
+  } else {
+    alert("Failed to delete PDF.");
+  }
+}
+</script>
 </body>
 </html>
