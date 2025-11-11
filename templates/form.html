@@ -101,20 +101,28 @@
           <input type="file" class="form-control" name="pdfs" accept="application/pdf" multiple>
 
           {% if rec.pdf_urls and rec.pdf_urls|length > 0 %}
-            <ul class="list-group mt-3">
-              {% for url in rec.pdf_urls %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <a href="{{ url }}" target="_blank" class="text-decoration-none text-info">
-                    <i class="bi bi-file-earmark-pdf-fill"></i> PDF {{ loop.index }}
-                  </a>
-                  <button type="button" class="btn btn-sm btn-outline-danger"
-        onclick="deletePDF('{{ rec.id }}', '{{ url }}')">
-  <i class="bi bi-trash"></i> Delete
-</button>
-                </li>
-              {% endfor %}
-            </ul>
-          {% endif %}
+  <ul class="list-group mt-3">
+    {% for url in rec.pdf_urls %}
+      {% set filename = url.split('/')[-1].split('?')[0] %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>
+          <span class="me-3">{{ filename }}</span>
+          <a href="{{ url }}" target="_blank" class="btn btn-sm btn-outline-info me-1">
+            <i class="bi bi-eye"></i> View
+          </a>
+          <a href="{{ url }}" download="{{ filename }}" class="btn btn-sm btn-outline-success me-1">
+            <i class="bi bi-download"></i> Download
+          </a>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-danger"
+                onclick="deletePDF('{{ rec.id }}', '{{ url }}')">
+          <i class="bi bi-trash"></i> Delete
+        </button>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
         </div>
       </div>
 
