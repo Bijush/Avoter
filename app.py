@@ -2,22 +2,25 @@ import os
 import json
 import base64
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from zoneinfo import ZoneInfo
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import firebase_admin
-from firebase_admin import credentials, db
+from firebase_admin import credentials, db, storage
 
 app = Flask(__name__)
 
 # --- Load Firebase config from environment ---
 firebase_base64 = os.environ.get("FIREBASE_SERVICE_ACCOUNT_BASE64")
 firebase_db_url = os.environ.get("FIREBASE_DATABASE_URL")
+firebase_storage_bucket = os.environ.get("FIREBASE_STORAGE_BUCKET")
 
 if not firebase_base64:
     raise ValueError("Missing FIREBASE_SERVICE_ACCOUNT_BASE64 environment variable")
 if not firebase_db_url:
     raise ValueError("Missing FIREBASE_DATABASE_URL environment variable")
+if not firebase_storage_bucket:
+    raise ValueError("Missing FIREBASE_STORAGE_BUCKET environment variable")
 
 # Decode Base64 Firebase credentials
 firebase_json = json.loads(base64.b64decode(firebase_base64).decode("utf-8"))
@@ -25,9 +28,13 @@ firebase_json = json.loads(base64.b64decode(firebase_base64).decode("utf-8"))
 # --- Initialize Firebase ---
 if not firebase_admin._apps:
     cred = credentials.Certificate(firebase_json)
-    firebase_admin.initialize_app(cred, {"databaseURL": firebase_db_url})
+    firebase_admin.initialize_app(cred, {
+        "databaseURL": firebase_db_url,
+        "storageBucket": firebase_storage_bucket
+    })
 
 DB_REF = db.reference("records")
+BUCKET = storage.bucket()
 
 # --- Helper function ---
 def default_record(data=None):
@@ -45,10 +52,11 @@ def default_record(data=None):
         "wife_payment": 0.0,
         "wife_paid": "",
         "wife_complete": "",
+        "wife_epic": "",
         "remark": "",
-        "wife_epic":"",
-        "created_date":"",
-        "updated_date":""
+        "pdf_url": "",
+        "created_date": "",
+        "updated_date": ""
     }
     defaults.update(d)
     return defaults
@@ -56,19 +64,17 @@ def default_record(data=None):
 # --- Inject current time into templates ---
 @app.context_processor
 def inject_now():
-    return {"now": datetime.now(timezone.utc)}
+    return {"now": datetime.now(ZoneInfo("Asia/Kolkata"))}
 
 # --- Routes ---
 @app.route("/")
 def index():
-    # Try to safely read from Firebase
     try:
         records_snapshot = DB_REF.get()
     except Exception as e:
         print("⚠️ Firebase read failed:", e)
         records_snapshot = None
 
-    # Create the /records node if missing
     if records_snapshot is None:
         DB_REF.set({})
         records_snapshot = {}
@@ -86,6 +92,14 @@ def add():
     if request.method == "POST":
         rec_id = str(uuid.uuid4())
         current_time = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S")
+
+        pdf_url = ""
+        pdf_file = request.files.get("pdf")
+        if pdf_file and pdf_file.filename.endswith(".pdf"):
+            blob = BUCKET.blob(f"pdfs/{rec_id}.pdf")
+            blob.upload_from_file(pdf_file, content_type="application/pdf")
+            pdf_url = blob.generate_signed_url(datetime.max)
+
         data = default_record({
             "name": request.form.get("name", "").strip(),
             "epic": request.form.get("epic", "").strip(),
@@ -101,8 +115,9 @@ def add():
             "wife_complete": request.form.get("wife_complete", ""),
             "wife_epic": request.form.get("wife_epic", ""),
             "remark": request.form.get("remark", ""),
-            "created_date":current_time,
-            "updated_date":current_time
+            "pdf_url": pdf_url,
+            "created_date": current_time,
+            "updated_date": current_time
         })
         DB_REF.child(rec_id).set(data)
         return redirect(url_for("index"))
@@ -116,6 +131,14 @@ def edit(id):
 
     if request.method == "POST":
         updated_time = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d %H:%M:%S")
+
+        pdf_url = rec_snapshot.get("pdf_url", "")
+        pdf_file = request.files.get("pdf")
+        if pdf_file and pdf_file.filename.endswith(".pdf"):
+            blob = BUCKET.blob(f"pdfs/{id}.pdf")
+            blob.upload_from_file(pdf_file, content_type="application/pdf")
+            pdf_url = blob.generate_signed_url(datetime.max)
+
         updated = default_record({
             "name": request.form.get("name", "").strip(),
             "epic": request.form.get("epic", "").strip(),
@@ -130,9 +153,10 @@ def edit(id):
             "wife_paid": request.form.get("wife_paid", ""),
             "wife_complete": request.form.get("wife_complete", ""),
             "wife_epic": request.form.get("wife_epic", ""),
-            "created_date": rec_snapshot.get("created_date", ""),  # keep original
-            "updated_date": updated_time,
-            "remark": request.form.get("remark", rec_snapshot.get("remark", ""))
+            "remark": request.form.get("remark", rec_snapshot.get("remark", "")),
+            "pdf_url": pdf_url,
+            "created_date": rec_snapshot.get("created_date", ""),
+            "updated_date": updated_time
         })
         DB_REF.child(id).update(updated)
         return redirect(url_for("index"))
@@ -144,6 +168,9 @@ def edit(id):
 @app.route("/delete/<string:id>", methods=["POST"])
 def delete(id):
     DB_REF.child(id).delete()
+    blob = BUCKET.blob(f"pdfs/{id}.pdf")
+    if blob.exists():
+        blob.delete()
     return redirect(url_for("index"))
 
 @app.route("/update_remark", methods=["POST"])
@@ -163,6 +190,5 @@ def test_connection():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# --- Main entry ---
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
