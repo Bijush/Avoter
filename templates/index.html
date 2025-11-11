@@ -318,7 +318,7 @@ td:nth-child(13) {
 
 <td>
   {% if r.pdf_urls and r.pdf_urls|length > 0 %}
-    <div class="d-flex flex-wrap gap-1">
+    <div class="d-flex flex-wrap gap-1 justify-content-center">
       {% for url in r.pdf_urls %}
         {% set filename = url.split('/')[-1].split('?')[0] %}
         
@@ -328,9 +328,10 @@ td:nth-child(13) {
         </a>
 
         <!-- Download PDF -->
-        <a href="{{ url }}" download="{{ filename }}" class="btn btn-sm btn-success text-white" title="Download PDF">
+        <button type="button" class="btn btn-sm btn-success text-white" title="Download PDF"
+                onclick="downloadPDF('{{ url }}', '{{ filename }}')">
           <i class="bi bi-download"></i>
-        </a>
+        </button>
 
         <!-- Delete PDF -->
         <form method="post"
@@ -342,6 +343,9 @@ td:nth-child(13) {
             <i class="bi bi-trash"></i>
           </button>
         </form>
+
+        <!-- Filename below icons -->
+        <div class="w-100 text-center small text-muted">{{ filename }}</div>
       {% endfor %}
     </div>
   {% else %}
@@ -508,8 +512,8 @@ td:nth-child(13) {
 
   });
 
-function downloadPDF(url) {
-  const fileName = url.split('/').pop().split('?')[0] || 'file.pdf';
+function downloadPDF(url, fileName) {
+  if (!fileName) fileName = url.split('/').pop().split('?')[0] || 'file.pdf';
 
   fetch(url)
     .then(res => {
