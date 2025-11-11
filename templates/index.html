@@ -323,27 +323,25 @@ td:nth-child(13) {
         {% set filename = url.split('/')[-1].split('?')[0] %}
         
         <!-- View PDF -->
-        <a href="{{ url }}" target="_blank" class="btn btn-sm btn-info text-white">
-          <i class="bi bi-file-earmark-pdf"></i>
-          {{ filename if filename else 'PDF' }}
+        <a href="{{ url }}" target="_blank" class="btn btn-sm btn-info text-white" title="View PDF">
+          <i class="bi bi-eye"></i>
         </a>
-        
-        <!-- Download PDF (using JS) -->
-        <button type="button" class="btn btn-sm btn-success text-white"
-                onclick="downloadPDF('{{ url }}')">
+
+        <!-- Download PDF -->
+        <a href="{{ url }}" download="{{ filename }}" class="btn btn-sm btn-success text-white" title="Download PDF">
           <i class="bi bi-download"></i>
-        </button>
-        
+        </a>
+
         <!-- Delete PDF -->
         <form method="post"
-      action="{{ url_for('delete_pdf_route', record_id=r.id) }}"
-      class="d-inline"
-      onsubmit="event.stopPropagation(); return confirm('Delete this PDF?');">
-  <input type="hidden" name="pdf_url" value="{{ url }}">
-  <button type="submit" class="btn btn-sm btn-danger">
-    <i class="bi bi-trash"></i>
-  </button>
-</form>
+              action="{{ url_for('delete_pdf_route', record_id=r.id) }}"
+              class="d-inline"
+              onsubmit="event.stopPropagation(); return confirm('Delete this PDF?');">
+          <input type="hidden" name="pdf_url" value="{{ url }}">
+          <button type="submit" class="btn btn-sm btn-danger" title="Delete PDF">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
       {% endfor %}
     </div>
   {% else %}
