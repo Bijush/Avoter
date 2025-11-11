@@ -317,12 +317,22 @@ td:nth-child(13) {
 <td>{{ r.updated_date or '-' }}</td>
 
 <td>
-  {% if r.pdf_url %}
-    <a href="{{ r.pdf_url }}" target="_blank" class="btn btn-sm btn-info">
-      <i class="bi bi-file-earmark-pdf-fill"></i> View
-    </a>
+  {% if r.pdf_urls and r.pdf_urls|length > 0 %}
+    {% for pdf_url in r.pdf_urls %}
+      <div class="d-flex align-items-center justify-content-between mb-1">
+        <a href="{{ pdf_url }}" target="_blank" class="btn btn-sm btn-info me-1">
+          <i class="bi bi-file-earmark-pdf-fill"></i> PDF {{ loop.index }}
+        </a>
+        <form method="post" action="{{ url_for('delete_pdf', record_id=r.id) }}" style="display:inline;">
+          <input type="hidden" name="pdf_url" value="{{ pdf_url }}">
+          <button type="submit" class="btn btn-sm btn-danger">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+      </div>
+    {% endfor %}
   {% else %}
-    <span class="text-muted">No PDF</span>
+    <span class="text-muted">No PDFs</span>
   {% endif %}
 </td>
 
