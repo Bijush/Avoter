@@ -563,7 +563,7 @@ function downloadPDF(url, fileName) {
     else if (record.status?.toLowerCase() === "complete") bgColor = "#e8f5e9";
     else if (record.status?.toLowerCase() === "pending") bgColor = "#fff8e1";
 
-    // Normal columns (apply background)
+    // Normal columns (apply background with !important)
     const normalCells = [
       record.name || "",
       record.epic || "",
@@ -575,7 +575,12 @@ function downloadPDF(url, fileName) {
     normalCells.forEach((value) => {
       const td = document.createElement("td");
       td.textContent = value;
-      td.style.backgroundColor = bgColor;
+
+      // Use setProperty with important
+      if (bgColor) {
+        td.style.setProperty('background-color', bgColor, 'important');
+      }
+
       tr.appendChild(td);
     });
 
