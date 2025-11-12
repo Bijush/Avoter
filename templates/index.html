@@ -151,7 +151,15 @@ thead.table-light th {
 .badge.bg-secondary {
   background-color: #6c757d !important;
 }
+  .badge.bg-info {
+  background-color: #0dcaf0 !important; /* Bootstrap info blue */
+  color: #fff !important;
+}
 
+  /* Submitted column (light blue) */
+td:has(.badge.bg-info) {
+  background-color: #e8f7ff !important;
+}
 /* Remark input highlight */
 .remark-input {
   background-color: #fff;
@@ -256,15 +264,25 @@ td:nth-child(13) {
     </a>
   </div>
   <div class="card shadow-sm mb-3 p-3">
-    <div class="row g-2">
-      <div class="col-auto"><select id="paidFilter" class="form-select">
-        <option value="">All Paid</option><option value="paid">Paid</option><option value="unpaid">Unpaid</option>
-      </select></div>
-      <div class="col-auto"><select id="completeFilter" class="form-select">
-        <option value="">All</option><option value="complete">Complete</option><option value="pending">Pending</option>
-      </select></div>
+  <div class="row g-2">
+    <div class="col-auto">
+      <select id="paidFilter" class="form-select">
+        <option value="">All Paid</option>
+        <option value="paid">Paid</option>
+        <option value="unpaid">Unpaid</option>
+      </select>
+    </div>
+
+    <div class="col-auto">
+      <select id="completeFilter" class="form-select">
+        <option value="">All</option>
+        <option value="complete">Complete</option>
+        <option value="submitted">Submitted</option>
+        <option value="pending">Pending</option>
+      </select>
     </div>
   </div>
+</div>
   <div class="card shadow-sm">
     <div class="table-responsive-sm">
     
@@ -308,11 +326,13 @@ td:nth-child(13) {
         {{ r.paid.title() }}
       </span>
     </td>
-    <td>
-      <span class="badge bg-{{ 'success' if r.complete=='complete' else 'secondary' }}">
-        {{ r.complete.title() }}
-      </span>
-    </td>
+    {% set complete_color = 
+   'success' if r.complete == 'complete' else 
+   'info' if r.complete == 'submitted' else 
+   'secondary' %}
+<span class="badge bg-{{ complete_color }}">
+  {{ r.complete.title() }}
+</span>
     <td>{{ r.created_date or '-' }}</td>
 <td>{{ r.updated_date or '-' }}</td>
 
