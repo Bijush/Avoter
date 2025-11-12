@@ -608,6 +608,23 @@ function downloadPDF(url, fileName) {
 
     tbody.appendChild(tr);
   });
+    applyRowColors();
+}
+  
+  function applyRowColors() {
+  $('#recordsTable tbody tr').each(function () {
+    const statusText = $(this).find('td:nth-child(10)').text().trim().toLowerCase();
+
+    $(this).removeClass('row-complete row-submitted row-pending');
+
+    if (statusText === 'complete') {
+      $(this).addClass('row-complete');
+    } else if (statusText === 'submitted') {
+      $(this).addClass('row-submitted');
+    } else if (statusText === 'pending') {
+      $(this).addClass('row-pending');
+    }
+  });
 }
 </script>
 
