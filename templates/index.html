@@ -241,6 +241,25 @@ td:nth-child(13) {
 #recordsTable td, #recordsTable th {
   border-color: #dee2e6 !important;
 }
+  /* Smooth background color transition */
+#recordsBody tr {
+  transition: background-color 0.3s ease;
+}
+
+/* Light blue for submitted */
+.row-submitted {
+  background-color: #e0f7fa !important;
+}
+
+/* Light green for complete */
+.row-complete {
+  background-color: #e8f5e9 !important;
+}
+
+/* Light yellow for pending */
+.row-pending {
+  background-color: #fff8e1 !important;
+}
 </style>
  
 </head>
@@ -536,15 +555,15 @@ function downloadPDF(url, fileName) {
   data.forEach((record, index) => {
     const tr = document.createElement("tr");
 
-    // background based on status
-    if (record.complete) {
-      const status = record.complete.toLowerCase();
-      if (status === "submitted") tr.style.backgroundColor = "#e0f7fa";   // light blue
-      else if (status === "complete") tr.style.backgroundColor = "#e8f5e9"; // light green
-      else if (status === "pending") tr.style.backgroundColor = "#fff8e1";  // light yellow
-    }
+    // normalize status text
+    const status = (record.complete || "").trim().toLowerCase();
 
-    // Serial + basic info columns
+    // add background color class based on status
+    if (status === "submitted") tr.classList.add("row-submitted");
+    else if (status === "complete") tr.classList.add("row-complete");
+    else if (status === "pending") tr.classList.add("row-pending");
+
+    // table data
     const normalCells = [
       index + 1,
       record.name || "",
