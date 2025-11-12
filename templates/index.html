@@ -308,13 +308,14 @@ td:nth-child(13) {
   </tr>
 </thead>
 
-<tbody>
+
+<tbody id="recordsBody">
   {% for r in records %}
   <tr data-wife='{{ [r.wife_name, r.wife_epic, r.wife_payment, r.wife_paid, r.wife_complete] | tojson | safe }}'>
     <td class="details-control text-center">
       <i class="bi bi-plus-circle fs-4"></i>
     </td>
-    <td>{{ loop.index }}</td> <!-- ✅ Continuous Sl. No. -->
+    <td>{{ loop.index }}</td>
     <td>{{ r.name }}</td>
     <td>{{ r.epic }}</td>
     <td>{{ r.ps }}</td>
@@ -327,82 +328,60 @@ td:nth-child(13) {
       </span>
     </td>
     <td>
-  {% set complete_color = 
-     'success' if r.complete == 'complete' else 
-     'info' if r.complete == 'submitted' else 
-     'secondary' %}
-  <span class="badge bg-{{ complete_color }}">
-    {{ r.complete.title() }}
-  </span>
-</td>
+      {% set complete_color = 
+         'success' if r.complete == 'complete' else 
+         'info' if r.complete == 'submitted' else 
+         'secondary' %}
+      <span class="badge bg-{{ complete_color }}">
+        {{ r.complete.title() }}
+      </span>
+    </td>
     <td>{{ r.created_date or '-' }}</td>
-<td>{{ r.updated_date or '-' }}</td>
-
-<td>
-  {% if r.pdf_urls and r.pdf_urls|length > 0 %}
-    <div class="d-flex flex-wrap gap-1 justify-content-center">
-      {% for url in r.pdf_urls %}
-        {% set filename = url.split('/')[-1].split('?')[0] %}
-        
-        <!-- View PDF -->
-        <a href="{{ url }}" target="_blank" class="btn btn-sm btn-info text-white" title="View PDF">
-          <i class="bi bi-eye"></i>
-        </a>
-
-        <!-- Download PDF -->
-        <button type="button" class="btn btn-sm btn-success text-white" title="Download PDF"
-                onclick="downloadPDF('{{ url }}', '{{ filename }}')">
-          <i class="bi bi-download"></i>
-        </button>
-
-        <form method="post"
-      action="{{ url_for('delete_pdf_route', record_id=r.id) }}"
-      class="d-inline"
-      onsubmit="event.stopPropagation(); return confirm('Delete this PDF?');">
-  <input type="hidden" name="pdf_url" value="{{ url }}">
-  <button type="submit"
-          class="btn btn-sm btn-danger"
-          title="Delete PDF"
-          onclick="event.stopPropagation(); return true;">
-    <i class="bi bi-trash"></i>
-  </button>
-</form>
-
-        <!-- Filename below icons -->
-        <div class="w-100 text-center small text-muted">{{ filename }}</div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <span class="text-muted">No PDFs</span>
-  {% endif %}
-</td>
-
-<td>
-  <input
-    type="text"
-    name="remark"
-    class="form-control form-control-sm remark-input"
-    value="{{ r.remark or '' }}"
-    placeholder="Add remark..."
-    data-id="{{ r.id }}"
-  >
-</td>
+    <td>{{ r.updated_date or '-' }}</td>
+    <td>
+      {% if r.pdf_urls and r.pdf_urls|length > 0 %}
+        <div class="d-flex flex-wrap gap-1 justify-content-center">
+          {% for url in r.pdf_urls %}
+            {% set filename = url.split('/')[-1].split('?')[0] %}
+            <a href="{{ url }}" target="_blank" class="btn btn-sm btn-info text-white" title="View PDF">
+              <i class="bi bi-eye"></i>
+            </a>
+            <button type="button" class="btn btn-sm btn-success text-white" title="Download PDF"
+                    onclick="downloadPDF('{{ url }}', '{{ filename }}')">
+              <i class="bi bi-download"></i>
+            </button>
+            <form method="post"
+                  action="{{ url_for('delete_pdf_route', record_id=r.id) }}"
+                  class="d-inline"
+                  onsubmit="event.stopPropagation(); return confirm('Delete this PDF?');">
+              <input type="hidden" name="pdf_url" value="{{ url }}">
+              <button type="submit" class="btn btn-sm btn-danger"
+                      title="Delete PDF" onclick="event.stopPropagation(); return true;">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+            <div class="w-100 text-center small text-muted">{{ filename }}</div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <span class="text-muted">No PDFs</span>
+      {% endif %}
+    </td>
+    <td>
+      <input type="text" name="remark" class="form-control form-control-sm remark-input"
+             value="{{ r.remark or '' }}" placeholder="Add remark..." data-id="{{ r.id }}">
+    </td>
     <td class="text-nowrap">
-  <!-- ✏️ Edit button -->
-  <a href="{{ url_for('edit', id=r.id) }}" class="btn btn-sm btn-primary me-1">
-    <i class="bi bi-pencil-square"></i>
-  </a>
-
-  <!-- 🗑️ Delete button -->
-  <form method="post"
-        action="{{ url_for('delete_record', id=r.id) }}"
-        style="display:inline"
-        onsubmit="return confirm('Delete this record?')">
-    <button type="submit" class="btn btn-sm btn-danger">
-      <i class="bi bi-trash"></i>
-    </button>
-  </form>
-</td>
+      <a href="{{ url_for('edit', id=r.id) }}" class="btn btn-sm btn-primary me-1">
+        <i class="bi bi-pencil-square"></i>
+      </a>
+      <form method="post" action="{{ url_for('delete_record', id=r.id) }}" style="display:inline"
+            onsubmit="return confirm('Delete this record?')">
+        <button type="submit" class="btn btn-sm btn-danger">
+          <i class="bi bi-trash"></i>
+        </button>
+      </form>
+    </td>
   </tr>
   {% endfor %}
 </tbody>
@@ -554,51 +533,52 @@ function downloadPDF(url, fileName) {
   const tbody = document.getElementById("recordsBody");
   tbody.innerHTML = "";
 
-  data.forEach((record) => {
+  data.forEach((record, index) => {
     const tr = document.createElement("tr");
 
-    // Determine background color based on status
+    // background based on status
     let bgColor = "";
-    if (record.status?.toLowerCase() === "submitted") bgColor = "#e0f7fa";
-    else if (record.status?.toLowerCase() === "complete") bgColor = "#e8f5e9";
-    else if (record.status?.toLowerCase() === "pending") bgColor = "#fff8e1";
+    if (record.complete?.toLowerCase() === "submitted") bgColor = "#e0f7fa";
+    else if (record.complete?.toLowerCase() === "complete") bgColor = "#e8f5e9";
+    else if (record.complete?.toLowerCase() === "pending") bgColor = "#fff8e1";
 
-    // Columns to apply background
+    // Serial + basic info columns
     const normalCells = [
+      index + 1,         // Sl No
       record.name || "",
       record.epic || "",
-      record.entryDate || "",
+      record.ps || "",
+      record.old_house || "",
+      record.new_house || "",
+      record.payment != null ? `₹${parseFloat(record.payment).toFixed(2)}` : "",
       record.paid || "",
-      record.status || "",
+      record.complete || "",
+      record.created_date || "",
+      record.updated_date || ""
     ];
 
-    normalCells.forEach((value) => {
+    normalCells.forEach((val) => {
       const td = document.createElement("td");
-      td.textContent = value;
-
-      // Apply background with !important
+      td.textContent = val;
       if (bgColor) td.style.setProperty("background-color", bgColor, "important");
-
       tr.appendChild(td);
     });
 
-    // PDF column (no background)
+    // PDF column
     const pdfTd = document.createElement("td");
     pdfTd.innerHTML = record.pdf
       ? `<a href="${record.pdf}" target="_blank" class="btn btn-sm btn-info text-white">View PDF</a>`
       : "";
     tr.appendChild(pdfTd);
 
-    // Remark column (no background)
-    const remarksTd = document.createElement("td");
-    remarksTd.innerHTML = `
-      <input type="text" class="form-control form-control-sm remark-input"
-             value="${record.remarks || ''}" placeholder="Add remark..."
-             data-id="${record.id}">
-    `;
-    tr.appendChild(remarksTd);
+    // Remark input
+    const remarkTd = document.createElement("td");
+    remarkTd.innerHTML = `<input type="text" class="form-control form-control-sm remark-input"
+                              value="${record.remarks || ''}" placeholder="Add remark..."
+                              data-id="${record.id}">`;
+    tr.appendChild(remarkTd);
 
-    // Action column (no background)
+    // Actions
     const actionTd = document.createElement("td");
     actionTd.innerHTML = `
       <button class="btn btn-sm btn-warning edit-btn" data-id="${record.id}">Edit</button>
