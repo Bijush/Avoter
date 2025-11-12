@@ -51,14 +51,14 @@
         </div>
 
         <div class="col-md-3">
-          <label class="form-label">Complete?</label>
-          <select class="form-select" name="complete">
-            <option value="">Select</option>
-            <option value="complete" {% if rec.complete == 'complete' %}selected{% endif %}>Complete</option>
-            <option value="pending" {% if rec.complete == 'pending' %}selected{% endif %}>Pending</option>
-          </select>
-        </div>
-
+  <label class="form-label">Complete?</label>
+  <select class="form-select" name="complete">
+    <option value="">Select</option>
+    <option value="complete" {% if rec.complete == 'complete' %}selected{% endif %}>Complete</option>
+    <option value="pending" {% if rec.complete == 'pending' %}selected{% endif %}>Pending</option>
+    <option value="submitted" {% if rec.complete == 'submitted' %}selected{% endif %}>Submitted</option>
+  </select>
+</div>
         <div class="col-md-6">
           <label class="form-label">Wife Name</label>
           <input type="text" class="form-control" name="wife_name" value="{{ rec.wife_name or '' }}">
@@ -82,13 +82,14 @@
         </div>
 
         <div class="col-md-3">
-          <label class="form-label">Wife Complete?</label>
-          <select class="form-select" name="wife_complete">
-            <option value="">Select</option>
-            <option value="complete" {% if rec.wife_complete == 'complete' %}selected{% endif %}>Complete</option>
-            <option value="pending" {% if rec.wife_complete == 'pending' %}selected{% endif %}>Pending</option>
-          </select>
-        </div>
+  <label class="form-label">Wife Complete?</label>
+  <select class="form-select" name="wife_complete">
+    <option value="">Select</option>
+    <option value="complete" {% if rec.wife_complete == 'complete' %}selected{% endif %}>Complete</option>
+    <option value="pending" {% if rec.wife_complete == 'pending' %}selected{% endif %}>Pending</option>
+    <option value="submitted" {% if rec.wife_complete == 'submitted' %}selected{% endif %}>Submitted</option>
+  </select>
+</div>
 
         <div class="col-md-6">
           <label class="form-label">Remark</label>
