@@ -326,13 +326,15 @@ td:nth-child(13) {
         {{ r.paid.title() }}
       </span>
     </td>
-    {% set complete_color = 
-   'success' if r.complete == 'complete' else 
-   'info' if r.complete == 'submitted' else 
-   'secondary' %}
-<span class="badge bg-{{ complete_color }}">
-  {{ r.complete.title() }}
-</span>
+    <td>
+  {% set complete_color = 
+     'success' if r.complete == 'complete' else 
+     'info' if r.complete == 'submitted' else 
+     'secondary' %}
+  <span class="badge bg-{{ complete_color }}">
+    {{ r.complete.title() }}
+  </span>
+</td>
     <td>{{ r.created_date or '-' }}</td>
 <td>{{ r.updated_date or '-' }}</td>
 
