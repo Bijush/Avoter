@@ -563,7 +563,7 @@ function downloadPDF(url, fileName) {
     else if (record.status?.toLowerCase() === "complete") bgColor = "#e8f5e9";
     else if (record.status?.toLowerCase() === "pending") bgColor = "#fff8e1";
 
-    // Normal columns (apply background with !important)
+    // Columns to apply background
     const normalCells = [
       record.name || "",
       record.epic || "",
@@ -576,25 +576,29 @@ function downloadPDF(url, fileName) {
       const td = document.createElement("td");
       td.textContent = value;
 
-      // Use setProperty with important
-      if (bgColor) {
-        td.style.setProperty('background-color', bgColor, 'important');
-      }
+      // Apply background with !important
+      if (bgColor) td.style.setProperty("background-color", bgColor, "important");
 
       tr.appendChild(td);
     });
 
-    // Excluded columns (no background)
+    // PDF column (no background)
     const pdfTd = document.createElement("td");
     pdfTd.innerHTML = record.pdf
-      ? `<a href="${record.pdf}" target="_blank">View PDF</a>`
+      ? `<a href="${record.pdf}" target="_blank" class="btn btn-sm btn-info text-white">View PDF</a>`
       : "";
     tr.appendChild(pdfTd);
 
+    // Remark column (no background)
     const remarksTd = document.createElement("td");
-    remarksTd.textContent = record.remarks || "";
+    remarksTd.innerHTML = `
+      <input type="text" class="form-control form-control-sm remark-input"
+             value="${record.remarks || ''}" placeholder="Add remark..."
+             data-id="${record.id}">
+    `;
     tr.appendChild(remarksTd);
 
+    // Action column (no background)
     const actionTd = document.createElement("td");
     actionTd.innerHTML = `
       <button class="btn btn-sm btn-warning edit-btn" data-id="${record.id}">Edit</button>
