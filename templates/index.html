@@ -550,6 +550,56 @@ function downloadPDF(url, fileName) {
     alert('❌ Download failed: ' + err.message);
   }
 }
+  function renderTable(data) {
+  const tbody = document.getElementById("recordsBody");
+  tbody.innerHTML = "";
+
+  data.forEach((record) => {
+    const tr = document.createElement("tr");
+
+    // Determine background color based on status
+    let bgColor = "";
+    if (record.status?.toLowerCase() === "submitted") bgColor = "#e0f7fa";
+    else if (record.status?.toLowerCase() === "complete") bgColor = "#e8f5e9";
+    else if (record.status?.toLowerCase() === "pending") bgColor = "#fff8e1";
+
+    // Normal columns (apply background)
+    const normalCells = [
+      record.name || "",
+      record.epic || "",
+      record.entryDate || "",
+      record.paid || "",
+      record.status || "",
+    ];
+
+    normalCells.forEach((value) => {
+      const td = document.createElement("td");
+      td.textContent = value;
+      td.style.backgroundColor = bgColor;
+      tr.appendChild(td);
+    });
+
+    // Excluded columns (no background)
+    const pdfTd = document.createElement("td");
+    pdfTd.innerHTML = record.pdf
+      ? `<a href="${record.pdf}" target="_blank">View PDF</a>`
+      : "";
+    tr.appendChild(pdfTd);
+
+    const remarksTd = document.createElement("td");
+    remarksTd.textContent = record.remarks || "";
+    tr.appendChild(remarksTd);
+
+    const actionTd = document.createElement("td");
+    actionTd.innerHTML = `
+      <button class="btn btn-sm btn-warning edit-btn" data-id="${record.id}">Edit</button>
+      <button class="btn btn-sm btn-danger delete-btn" data-id="${record.id}">Delete</button>
+    `;
+    tr.appendChild(actionTd);
+
+    tbody.appendChild(tr);
+  });
+}
 </script>
 
 </body>
