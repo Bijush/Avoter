@@ -537,14 +537,16 @@ function downloadPDF(url, fileName) {
     const tr = document.createElement("tr");
 
     // background based on status
-    let bgColor = "";
-    if (record.complete?.toLowerCase() === "submitted") bgColor = "#e0f7fa";
-    else if (record.complete?.toLowerCase() === "complete") bgColor = "#e8f5e9";
-    else if (record.complete?.toLowerCase() === "pending") bgColor = "#fff8e1";
+    if (record.complete) {
+      const status = record.complete.toLowerCase();
+      if (status === "submitted") tr.style.backgroundColor = "#e0f7fa";   // light blue
+      else if (status === "complete") tr.style.backgroundColor = "#e8f5e9"; // light green
+      else if (status === "pending") tr.style.backgroundColor = "#fff8e1";  // light yellow
+    }
 
     // Serial + basic info columns
     const normalCells = [
-      index + 1,         // Sl No
+      index + 1,
       record.name || "",
       record.epic || "",
       record.ps || "",
@@ -560,7 +562,6 @@ function downloadPDF(url, fileName) {
     normalCells.forEach((val) => {
       const td = document.createElement("td");
       td.textContent = val;
-      if (bgColor) td.style.setProperty("background-color", bgColor, "important");
       tr.appendChild(td);
     });
 
