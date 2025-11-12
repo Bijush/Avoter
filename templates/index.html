@@ -260,6 +260,10 @@ td:nth-child(13) {
 .row-pending {
   background-color: #fff8e1 !important;
 }
+  td i {
+  font-size: 1.2rem;
+  vertical-align: middle;
+  }
 </style>
  
 </head>
@@ -335,7 +339,18 @@ td:nth-child(13) {
       <i class="bi bi-plus-circle fs-4"></i>
     </td>
     <td>{{ loop.index }}</td>
-    <td>{{ r.name }}</td>
+    <td>
+  {% if r.complete == 'complete' %}
+    <i class="bi bi-check-circle-fill text-success me-1" title="Complete"></i>
+  {% elif r.complete == 'submitted' %}
+    <i class="bi bi-upload text-info me-1" title="Submitted"></i>
+  {% elif r.complete == 'pending' %}
+    <i class="bi bi-hourglass-split text-warning me-1" title="Pending"></i>
+  {% else %}
+    <i class="bi bi-circle text-secondary me-1" title="Unknown"></i>
+  {% endif %}
+  {{ r.name }}
+</td>
     <td>{{ r.epic }}</td>
     <td>{{ r.ps }}</td>
     <td>{{ r.old_house }}</td>
